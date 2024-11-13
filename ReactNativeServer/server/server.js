@@ -7,12 +7,6 @@ const { MongoClient } = require('mongodb');
 
 const url = 'mongodb://localhost/issuetracker';
 
-// Atlas URL  - replace UUU with user, PPP with password, XXX with hostname
-// const url = 'mongodb+srv://UUU:PPP@cluster0-XXX.mongodb.net/issuetracker?retryWrites=true';
-
-// mLab URL - replace UUU with user, PPP with password, XXX with hostname
-// const url = 'mongodb://UUU:PPP@XXX.mlab.com:33533/issuetracker';
-
 let db;
 
 let aboutMessage = "Issue Tracker API v1.0";
@@ -48,13 +42,14 @@ const resolvers = {
   GraphQLDate,
 };
 
-async function addToBlacklist(_, {nameInput}) {
-
-  const result = await db.collection('blacklist').insertOne({name: nameInput});
+async function addToBlacklist(_, { nameInput }) {
+  const result = await db.collection('blacklist').insertOne({ name: nameInput });
+  return 'Name added to blacklist'; // 返回成功信息
 }
 
 function setAboutMessage(_, { message }) {
-  return aboutMessage = message;
+  aboutMessage = message;
+  return aboutMessage;
 }
 
 async function issueList() {
@@ -66,8 +61,15 @@ async function getNextSequence(name) {
   const result = await db.collection('counters').findOneAndUpdate(
     { _id: name },
     { $inc: { current: 1 } },
-    { returnOriginal: false },
+    { returnOriginal: false, upsert: true }, // 添加 upsert: true
   );
+
+  if (!result.value) {
+    // 如果 result.value 为 null，说明是新插入的，需要手动获取
+    const counter = await db.collection('counters').findOne({ _id: name });
+    return counter.current;
+  }
+
   return result.value.current;
 }
 
@@ -90,22 +92,29 @@ async function issueAdd(_, { issue }) {
   issue.id = await getNextSequence('issues');
 
   const result = await db.collection('issues').insertOne(issue);
-  const savedIssue = await db.collection('issues')
-    .findOne({ _id: result.insertedId });
+  const savedIssue = await db.collection('issues').findOne({ _id: result.insertedId });
   return savedIssue;
 }
 
 async function connectToDb() {
-  const client = new MongoClient(url, { useNewUrlParser: true });
+  const client = new MongoClient(url, { useNewUrlParser: true, useUnifiedTopology: true });
   await client.connect();
   console.log('Connected to MongoDB at', url);
   db = client.db();
 }
 
+async function initializeDb() {
+  const counters = db.collection('counters');
+  const issueCounter = await counters.findOne({ _id: 'issues' });
+  if (!issueCounter) {
+    await counters.insertOne({ _id: 'issues', current: 0 });
+  }
+}
+
 const server = new ApolloServer({
   typeDefs: fs.readFileSync('./server/schema.graphql', 'utf-8'),
   resolvers,
-  formatError: error => {
+  formatError: (error) => {
     console.log(error);
     return error;
   },
@@ -120,6 +129,7 @@ server.applyMiddleware({ app, path: '/graphql' });
 (async function () {
   try {
     await connectToDb();
+    await initializeDb(); // 初始化数据库
     app.listen(3000, function () {
       console.log('App started on port 3000');
     });

@@ -8,36 +8,41 @@
 
 import React from 'react';
 import IssueList from './IssueList.js';
-import type {Node} from 'react';
 import {
   SafeAreaView,
-  ScrollView,
-  StatusBar,
   StyleSheet,
   Text,
-  useColorScheme,
   View,
 } from 'react-native';
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
-
-
-
-export default class App extends React.Component
-{
-  render()
-  {
-    return(
-    <>
-      <Text>Issue Tracker</Text>
-      <IssueList/>
-    </>);
-
+export default class App extends React.Component {
+  render() {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.container}>
+          <Text style={styles.title}>Issue Tracker</Text>
+          <IssueList />
+        </View>
+      </SafeAreaView>
+    );
   }
 }
+
+// 添加样式
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#f8f9fa',
+  },
+  container: {
+    flex: 1,
+    paddingHorizontal: 16,
+  },
+  title: {
+    fontSize: 26,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginVertical: 10,
+    color: '#333333',
+  },
+});
