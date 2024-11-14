@@ -457,3 +457,4 @@ export default class IssueList extends React.Component {
         );
     }
 }
+
