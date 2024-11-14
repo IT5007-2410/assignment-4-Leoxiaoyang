@@ -1,3 +1,7 @@
+Note on server.js Modification
+Due to an issue with ID initialization, I have made modifications to the server.js file. Please remember to use my version of the backend when running the program. I have received permission from the professor in class to make this change.
+
+
 Below, you can find the installation instructions for Windows and MacOS (To be updated soon).
 
 # ReactNative Installation (Windows)
